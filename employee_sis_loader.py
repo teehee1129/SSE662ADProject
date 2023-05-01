@@ -2,7 +2,7 @@ from multiprocessing import Pool
 import datetime, base64, requests, sys, json, os, argparse, re, psycopg
 import traceback
 from configparser import ConfigParser
-#from psycopg2.extras import DictCursor
+from student_loader import Students
 from employee_loader import Employees
 from xmljson import badgerfish as bf
 from xml.etree.ElementTree import Element, fromstring, tostring
@@ -13,10 +13,11 @@ class PatronLoader(object):
     config = None
     offset_index = 0
     outdir = "/usr/local/almasisload/synchronize/"
-
     
     def __init__(self, auth_token=None, config=None):
         self.config = config
+    
+        
     
     
     def _conditionally_print(self,counter,total):
@@ -38,50 +39,60 @@ class PatronLoader(object):
                                port=int(self.config['patrons']['port']),
                                user=self.config['patrons']['user'],
                                password=self.config['patrons']['password'])
-        cur = con.cursor(cursor_factory=DictCursor)
         """
+        strConnInfo = "conninfo=\'host={} port={} dbname={} user={} password={} connection_timeout=10\'"\
+        .format(self.config['librariesdev.mercer.edu']['host'],
+        int(self.config[5432]['port']),
+        self.config['Patrons']['database'],
+        self.config['patron_read']['user'],
+        self.config['CongratsGraduation2023!!']['password'])
 
-        hostname = self.config['patrons']['host']
-        dbname = self.config['patrons']['database']
-        portnum = int(self.config['patrons']['port'])
-        username = self.config['patrons']['user']
-        password = self.config['patrons']['password']
+        print(strConnInfo)
 
+        con = psycopg.connect(strConnInfo)
 
-        con = psycopg.connect('host=%s port=%s dbname=%s user=%s password=%s'%(hostname, portnum, dbname, username, password))
-
-        cur = con.cursor(row_factory=psycopg.rows.dict_row)
-
-    
+        cur = con.cursor()
+        
         return {'con':con,'cur':cur}
     
     def get_existing_patrons(self, id=None):
         '''
-        Retrieve current employees from the patron db by calling the employees_loader.py functions creates xml file for alma sis
+            Use the Student Loader to retrieve current student records and generate an xml file for Alma SIS load 
         '''
+        students = Students(options=self.config)
+        total = len(students.patron_dict)
+        sys.stderr.write("Retrieved {} student records\n".format(total))
         counter = 1
         with Pool(processes = 4, maxtasksperchild = 50) as pool:
             results = []
             new_counter = 0
-            existing_counter = 0
+#            existing_counter = 0
+            for muid in students.patron_dict:
+#                r = None
+                results.append(students.get_json(muid))
+                new_counter += 1
+                    # old record: update it!
+                counter+=1
+
             employees = Employees(options=self.config)
             total_employees = len(employees.patron_dict)
             print("Retrieved {} employee records".format(total_employees))
-            
+
             for muid in employees.patron_dict:
                 results.append(employees.get_json(muid))
                 new_counter += 1;
+
             pool.close()
             pool.join()
             today = str(datetime.date.today())
-            outfile = self.outdir + "empl-" + today +".xml"
+            outfile = self.outdir + "Mercer_patrons-" + today +".xml"
+
             xml4 = bf.etree({"user":results}, root=Element ('users'))
             xml4 = tostring(xml4)
-            output = open(outfile,"wb")
+            output = open(outfile, "wb")
             output.write(xml4)
-            print ("Employee count: ", new_counter)
 if __name__ == '__main__':
-    base_dir = re.sub(r'(.*)employee_sis_loader.py',r'\1',os.path.realpath(__file__))    
+    base_dir = re.sub(r'(.*)student_sis_loader.py',r'\1',os.path.realpath(__file__))    
     default_configfile = os.path.join(base_dir, 'config.cfg')
     parser = argparse.ArgumentParser(description='Update existing patrons and load new ones.')
     parser.add_argument('--config', 
