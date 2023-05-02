@@ -3,10 +3,13 @@ import datetime, base64, requests, sys, json, os, argparse, re, psycopg
 import traceback
 from configparser import ConfigParser
 #from psycopg.extras import DictCursor
-from student_loader import Students
-from employee_loader import Employees
+from students_class import Students
+#from student import student
+from employees_class import Employees
+#from employee import import employee
 from xmljson import badgerfish as bf
 from xml.etree.ElementTree import Element, fromstring, tostring
+import connect2db
 
 class PatronLoader(object):
     debug = True
@@ -33,24 +36,14 @@ class PatronLoader(object):
         '''
         Connect to Mercer Library Patron database
         '''
-        """
-        con = psycopg2.connect(
-                               database=self.config['patrons']['database'],
-                               host=self.config['patrons']['host'],
-                               port=int(self.config['patrons']['port']),
-                               user=self.config['patrons']['user'],
-                               password=self.config['patrons']['password'])
-        """
-        strConnInfo = "conninfo=\'host={} port={} dbname={} user={} password={} connection_timeout=10\'"\
-        .format(self.config['patrons']['host'],
-        int(self.config['patrons']['port']),
-        self.config['patrons']['database'],
-        self.config['patrons']['user'],
-        self.config['patrons']['password'])
 
-        print(strConnInfo)
+        dbhostname = self.config['patrons']['host']
+        dbportnumber = int(self.config['patrons']['port'])
+        dbname = self.config['patrons']['database']
+        dbusername = self.config['patrons']['user']
+        dbpassword = self.config['patrons']['password']
 
-        con = psycopg.connect(strConnInfo)
+        con = connect2db(dbhostname, dbportnumber, dbname, dbusername, dbpassword)
 
         cur = con.cursor(cursor_factory=DictCursor)
         
