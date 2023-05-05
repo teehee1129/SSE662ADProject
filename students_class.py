@@ -2,7 +2,8 @@
 #/var/www/virtual_webapps/alma_sis/bin/python
 #/opt/rh/rh-python34/root/usr/bin/python
 import psycopg, datetime, sys, smtplib, json
-import connect2db
+#import connect2db
+import patron_class
 
 class Students():
     con = None
@@ -32,7 +33,7 @@ Subject: pc255 from py!
         dbusername = self.config['patrons']['user']
         dbpassword = self.config['patrons']['password']
 
-        self.con = connect2db(dbhostname, dbportnumber, dbname, dbusername, dbpassword)
+        self.con = self.connect2db(self, dbhostname, dbportnumber, dbname, dbusername, dbpassword)
 
         self.getAllPatrons()
 
