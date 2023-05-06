@@ -13,3 +13,7 @@ The motivation behind working on this code was due to needing to update it recen
 For the sake of this project, a test copy of the database has been available. The server providing the database is a test server residing behind one of the library’s public-facing web servers. Please be aware that due to the university’s firewall rules, access to this server is limited to either on campus access or through the university’s VPN.
 
 Project Objectives:
+Connect to temporary database
+Receive input of credentials
+Input data from a CSV file into the database
+Export data from the database into an XML file
